@@ -18,7 +18,7 @@ struct GameState {
     bool doDrawMap;
 };
 
-void render(FrameBuffer &fb, const GameState &gs);
+void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *depth_buffer, size_t cell_w, size_t cell_h);
 
 #endif // TINYRAYCASTER_H
 
