@@ -15,8 +15,8 @@
 
 int demoMain() 
 {
-    // Serial.begin(9600);
-    // Serial.print("Tiny ray caster demo");
+    //  Serial.begin(9600);
+    //  Serial.print("Tiny ray caster demo");
 
     SdFat sdCard;         // SD card filesystem
 
@@ -45,13 +45,14 @@ int demoMain()
         // Serial.print("Failed to allocate framebuffer");
         while (1);
     }
+
     framebuffer = arcada.getFrameBuffer();
 
-    FrameBuffer fb{ARCADA_TFT_WIDTH, ARCADA_TFT_HEIGHT, std::vector<uint32_t>(ARCADA_TFT_WIDTH*ARCADA_TFT_HEIGHT, pack_color(255, 255, 255))};  
+    FrameBuffer fb{ARCADA_TFT_WIDTH, ARCADA_TFT_HEIGHT,ARCADA_TFT_WIDTH/2, ARCADA_TFT_HEIGHT/2, framebuffer};  
 
     Texture wallText = Texture((void *)(&imageReader), "walltext24half.bmp", false);
     // Serial.print("Loaded texture 1");
-    // Texture monsterText = Texture((void *)(&imageReader), "monsters24half.bmp", false);    
+    //Texture monsterText = Texture((void *)(&imageReader), "monsters24half.bmp", false);    
     GameState gs{ Map(),                                // game map
                   {3.456, 2.345, 1.523, M_PI/3., 0, 0}, // player
                   { {3.523, 3.812, 2, 0},               // monsters lists
@@ -60,7 +61,8 @@ int demoMain()
                     {14.32, 13.36, 3, 0},
                     {4.123, 10.76, 1, 0} },
                   &wallText,  // textures for the walls
-                  &wallText}; // textures for the monsters
+                  &wallText, // textures for the monsters
+                  false}; 
     if (!gs.tex_walls->count || !gs.tex_monst->count) {        
         // Serial.print("Failed to load textures");
         return -1;
@@ -95,36 +97,51 @@ int demoMain()
 
 
     uint8_t pressed_buttons = arcada.readButtons();  
+    int joyX = arcada.readJoystickX(); 
+    int joyY = arcada.readJoystickY(); 
+
+    // Serial.print(" joyX: ");
+    // Serial.print(joyX);
+    // Serial.print(" joyY: ");
+    // Serial.print(joyY);
   
-    if (pressed_buttons & ARCADA_BUTTONMASK_A) 
+  
+
+    if(joyY < -300)
     {
         gs.player.walk =  1;
     }
-    else if (pressed_buttons & ARCADA_BUTTONMASK_B) 
+    else if(joyY > 300)
     {
         gs.player.walk =  -1;
-    } 
-    else 
-    {
-        gs.player.walk =  0;
     }
-    
-    if (pressed_buttons & ARCADA_BUTTONMASK_SELECT) 
+    else
     {
-        gs.player.turn = -1;
-    } 
-    else if (pressed_buttons & ARCADA_BUTTONMASK_START) 
+        gs.player.walk = 0;
+    }
+
+    if(joyX < -300)
     {
-        gs.player.turn = 1;
+        gs.player.turn =  -1;
+    }
+    else if(joyX > 300)
+    {
+        gs.player.turn =  1;
     }
     else
     {
         gs.player.turn = 0;
     }
+        
+    if (pressed_buttons & ARCADA_BUTTONMASK_START) 
+    {
+        gs.doDrawMap = true;
+    }
+    else
+    {
+        gs.doDrawMap = false;
+    }      
     
-  
-    int joyX = arcada.readJoystickX() / 512.0 * 15.0 + 20; 
-    int joyY = arcada.readJoystickY() / 512.0 * 15.0 + 100; 
   
 
 
@@ -164,13 +181,13 @@ int demoMain()
        // Serial.print("Before render");
        render(fb, gs); // render the scene to the frambuffer
        // Serial.print("After render");
-       for (int x = 0; x < ARCADA_TFT_WIDTH; x++)            
-       {
-           for (int y = 0; y < ARCADA_TFT_HEIGHT; y++)
-           {
-               framebuffer[y * ARCADA_TFT_WIDTH + x] = fb.img[y * ARCADA_TFT_WIDTH + x];  
-           }
-       }                
+    //    for (int x = 0; x < ARCADA_TFT_WIDTH; x++)            
+    //    {
+    //        for (int y = 0; y < ARCADA_TFT_HEIGHT; y++)
+    //        {
+    //            framebuffer[y * ARCADA_TFT_WIDTH + x] = fb.img[y * ARCADA_TFT_WIDTH + x];  
+    //        }
+    //    }                
  // Serial.print("Before blit");
        arcada.blitFrameBuffer(0, 0, true, false); // block on blit
        // Serial.print("After blit");

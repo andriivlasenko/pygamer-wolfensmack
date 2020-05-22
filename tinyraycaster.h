@@ -15,6 +15,7 @@ struct GameState {
     std::vector<Sprite> monsters;
     Texture *tex_walls;
     Texture *tex_monst;
+    bool doDrawMap;
 };
 
 void render(FrameBuffer &fb, const GameState &gs);

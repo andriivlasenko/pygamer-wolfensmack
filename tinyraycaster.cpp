@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "tinyraycaster.h"
 
+#define M_PIx2      6.28318530717958647692
+
 int wall_x_texcoord(const float hitx, const float hity, Texture *tex_walls) {
     float x = hitx - floor(hitx+.5); // x and y contain (signed) fractional parts of hitx and hity,
     float y = hity - floor(hity+.5); // they vary between -0.5 and +0.5, and one of them is supposed to be very close to 0
@@ -35,18 +37,18 @@ void draw_map(FrameBuffer &fb, const std::vector<Sprite> &sprites, Texture *tex_
     }
 }
 
-void draw_sprite(FrameBuffer &fb, const Sprite &sprite, const std::vector<float> &depth_buffer, const Player &player, Texture *tex_sprites) {
+void draw_sprite(FrameBuffer &fb, const GameState &gs, const Sprite &sprite, const std::vector<float> &depth_buffer, const Player &player, Texture *tex_sprites) {
     // absolute direction from the player to the sprite (in radians)
     float sprite_dir = atan2(sprite.y - player.y, sprite.x - player.x);
-    while (sprite_dir - player.a >  M_PI) sprite_dir -= 2*M_PI; // remove unncesessary periods from the relative direction
-    while (sprite_dir - player.a < -M_PI) sprite_dir += 2*M_PI;
+    while (sprite_dir - player.a >  M_PI) sprite_dir -= M_PIx2; // remove unncesessary periods from the relative direction
+    while (sprite_dir - player.a < -M_PI) sprite_dir += M_PIx2;
 
     size_t sprite_screen_size = std::min(2000, static_cast<int>(fb.h/sprite.player_dist)); // screen sprite size
-    int h_offset = (sprite_dir - player.a)*(fb.w/2)/(player.fov) + (fb.w/2)/2 - sprite_screen_size/2; // do not forget the 3D view takes only a half of the framebuffer, thus fb.w/2 for the screen width
-    int v_offset = fb.h/2 - sprite_screen_size/2;
+    int h_offset = (sprite_dir - player.a)*(fb.getFbWidth(gs.doDrawMap))/(player.fov) + (fb.getFbWidth(gs.doDrawMap))/2 - sprite_screen_size/2; // do not forget the 3D view takes only a half of the framebuffer, thus fb.getFbWidth(gs.doDrawMap) for the screen width
+    int v_offset = fb.h_half - sprite_screen_size/2;
 
     for (size_t i=0; i<sprite_screen_size; i++) {
-        if (h_offset+int(i)<0 || h_offset+i>=fb.w/2) continue;
+        if (h_offset+int(i)<0 || h_offset+i>=fb.getFbWidth(gs.doDrawMap)) continue;
         if (depth_buffer[h_offset+i]<sprite.player_dist) continue; // this sprite column is occluded
         for (size_t j=0; j<sprite_screen_size; j++) {
             if (v_offset+int(j)<0 || v_offset+j>=fb.h) continue;
@@ -54,7 +56,7 @@ void draw_sprite(FrameBuffer &fb, const Sprite &sprite, const std::vector<float>
             uint8_t r,g,b,a;
             unpack_color(color, r, g, b, a);
             if (a>128)
-            fb.set_pixel(fb.w/2 + h_offset+i, v_offset+j, color);
+            fb.set_pixel(fb.getFbWidth(gs.doDrawMap) + h_offset+i, v_offset+j, color);
         }
     }
 }
@@ -70,27 +72,29 @@ void render(FrameBuffer &fb, const GameState &gs) {
 
     const size_t cell_w = fb.w/(map.w*2); // size of one map cell on the screen
     const size_t cell_h = fb.h/map.h;
-    std::vector<float> depth_buffer(fb.w/2, 1e3);
+    std::vector<float> depth_buffer(fb.getFbWidth(gs.doDrawMap), 1e3);
 
-    for (size_t i=0; i<fb.w/2; i++) { // draw the visibility cone AND the "3D" view
-        float angle = player.a-player.fov/2 + player.fov*i/float(fb.w/2);
-        for (float t=0; t<20; t+=.01) { // ray marching loop
+    for (size_t i=0; i<fb.getFbWidth(gs.doDrawMap); i++) { // draw the visibility cone AND the "3D" view
+        float angle = player.a-player.fov/2 + player.fov*i/float(fb.getFbWidth(gs.doDrawMap));
+        for (float t=0; t<10; t+=.02) {//for (float t=0; t<20; t+=.01) { // ray marching loop
             float x = player.x + t*cos(angle);
             float y = player.y + t*sin(angle);
-            fb.set_pixel(x*cell_w, y*cell_h, pack_color(190, 190, 190)); // this draws the visibility cone
+            if(gs.doDrawMap)
+            {
+                fb.set_pixel(x*cell_w, y*cell_h, pack_color(190, 190, 190)); // this draws the visibility cone
+            }
 
             if (map.is_empty(x, y)) continue;
 
-            size_t texid = map.get(x, y); // our ray touches a wall, so draw the vertical column to create an illusion of 3D
-            assert(texid<tex_walls->count);
+            size_t texid = map.get(x, y); // our ray touches a wall, so draw the vertical column to create an illusion of 3D            
             float dist = t*cos(angle-player.a);
             depth_buffer[i] = dist;
             size_t column_height = std::min(2000, int(fb.h/dist));
             int x_texcoord = wall_x_texcoord(x, y, tex_walls);
             std::vector<uint32_t> column = tex_walls->get_scaled_column(texid, x_texcoord, column_height);
-            int pix_x = i + fb.w/2; // we are drawing at the right half of the screen, thus +fb.w/2
+            int pix_x = i + fb.getFbWidth(gs.doDrawMap); // we are drawing at the right half of the screen, thus +fb.getFbWidth(gs.doDrawMap)
             for (size_t j=0; j<column_height; j++) { // copy the texture column to the framebuffer
-                int pix_y = j + fb.h/2 - column_height/2;
+                int pix_y = j + fb.h_half - column_height/2;
                 if (pix_y>=0 && pix_y<(int)fb.h) {
                     fb.set_pixel(pix_x, pix_y, column[j]);
                 }
@@ -99,10 +103,13 @@ void render(FrameBuffer &fb, const GameState &gs) {
         } // ray marching loop
     } // field of view ray sweeping
 
-    draw_map(fb, sprites, tex_walls, map, cell_w, cell_h);
+    if(gs.doDrawMap)
+    {
+        draw_map(fb, sprites, tex_walls, map, cell_w, cell_h);
+    }    
 
     for (size_t i=0; i<sprites.size(); i++) { // draw the sprites
-        draw_sprite(fb, sprites[i], depth_buffer, player, tex_monst);
+        draw_sprite(fb, gs, sprites[i], depth_buffer, player, tex_monst);
     }
 }
 
