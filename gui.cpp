@@ -51,8 +51,9 @@ int demoMain()
 
     FrameBuffer fb{ARCADA_TFT_WIDTH, ARCADA_TFT_HEIGHT,ARCADA_TFT_WIDTH/2, ARCADA_TFT_HEIGHT/2, ARCADA_TFT_WIDTH * ARCADA_TFT_HEIGHT * 2, framebuffer};  
 
-    Texture wallText = Texture((void *)(&imageReader), "walltext24half.bmp", false);    
-    Texture monsterText = Texture((void *)(&imageReader), "monsters24half.bmp", false);    
+    Texture wallTex = Texture((void *)(&imageReader), "walltext24half.bmp");    
+    Texture monsterTex = Texture((void *)(&imageReader), "monsters24half.bmp");    
+    Texture chainsawTex = Texture((void *)(&imageReader), "chainsaw24.bmp");    
 
     GameState gs{ Map(),                                // game map
                   {3.456, 2.345, 1.523, M_PI/3., 0, 0}, // player
@@ -61,9 +62,11 @@ int demoMain()
                     {5.323, 5.365, 1, 0},
                     {14.32, 13.36, 3, 0},
                     {4.123, 10.76, 1, 0} },
-                  &wallText,  // textures for the walls
-                  &monsterText, // textures for the monsters
-                  false}; 
+                  &wallTex,  // textures for the walls
+                  &monsterTex, // textures for the monsters
+                  &chainsawTex, // textures for the weapons
+                  false,
+                  0}; 
     if (!gs.tex_walls->count || !gs.tex_monst->count) {        
         // Serial.print("Failed to load textures");
         return -1;
@@ -120,6 +123,15 @@ int demoMain()
         else
         {
             gs.doDrawMap = false;
+        }
+
+        if (pressed_buttons & ARCADA_BUTTONMASK_A) 
+        {
+            gs.attack = 1;
+        }
+        else
+        {
+            gs.attack = 0;
         }             
 
         gs.player.a += float(gs.player.turn)*delta_ms*.5; // TODO measure elapsed time and modify the speed accordingly

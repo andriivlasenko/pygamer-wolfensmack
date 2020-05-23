@@ -6,7 +6,7 @@
 #include "Adafruit_ImageReader.h"
 
 
-Texture::Texture(void *imageReader, char *path, bool isWhiteTrans) : img_w(0), img_h(0), count(0), size(0), img() 
+Texture::Texture(void *imageReader, char *path) : img_w(0), img_h(0), count(0), size(0), img() 
 {       
     Adafruit_Image image;
     if(((Adafruit_ImageReader *)imageReader)->loadBMP(path, image) != IMAGE_SUCCESS)

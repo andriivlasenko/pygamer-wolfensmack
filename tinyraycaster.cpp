@@ -125,5 +125,19 @@ void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *de
     for (size_t i=0; i<sprites.size(); i++) { // draw the sprites
         draw_sprite(fb, gs, sprites[i], depth_buffer, player, tex_monst);
     }
+
+    if(!gs.doDrawMap)
+    {
+        for (size_t i=0; i<gs.tex_weapon->size; i++) {        
+            for (size_t j=0; j<gs.tex_weapon->size; j++) {            
+                uint16_t color = gs.tex_weapon->get(i, j, gs.attack);
+
+                if(color != 0xFFFF)
+                {
+                    fb.set_pixel(curFbWidth + 48+i, 64+j, color); //48 - hor offset, 65 - ver offset
+                }
+            }
+        }
+    }
 }
 
