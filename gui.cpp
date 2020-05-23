@@ -11,9 +11,35 @@
 #include "gui.h"
 #include "SdFat.h"
 #include "Adafruit_ImageReader.h"
+#include "audio.h"
 
 
-#define MONSTER_LIFE 50
+#define MONSTER_LIFE 60
+
+
+void play_tune(const uint8_t *audio, uint32_t audio_length) {
+    uint32_t t;
+    uint32_t prior, usec = 1000000L / SAMPLE_RATE;
+    analogWriteResolution(8);
+    for (uint32_t i=0; i<audio_length; i++) {
+        while((t = micros()) - prior < usec);
+        analogWrite(A0, (uint16_t)audio[i] / 8);
+        analogWrite(A1, (uint16_t)audio[i] / 8);
+        prior = t;
+    }
+}
+
+uint32_t display_pixelneo_lights(byte wheelPos, Adafruit_Arcada &arcada) {
+    if(wheelPos < 85) {
+        return arcada.pixels.Color(wheelPos * 3, 255 - wheelPos * 3, 0);
+    } else if(wheelPos < 170) {
+        wheelPos -= 85;
+        return arcada.pixels.Color(255 - wheelPos * 3, 0, wheelPos * 3);
+    } else {
+        wheelPos -= 170;
+        return arcada.pixels.Color(0, wheelPos * 3, 255 - wheelPos * 3);
+    }
+}
 
 int demoMain() 
 {
@@ -59,10 +85,10 @@ int demoMain()
 
     GameState gs{ Map(),                                // game map
                   {3.456, 2.345, 1.523, M_PI/3., 0, 0}, // player
-                  { {3.523, 3.812, 2, 0, MONSTER_LIFE},               // monsters lists
-                    {1.834, 8.765, 0, 0, MONSTER_LIFE * 3},
+                  { {3.523, 3.812, 2, 0, MONSTER_LIFE },               // monsters lists
+                    {1.834, 8.765, 0, 0, MONSTER_LIFE * 2},
                     {5.323, 5.365, 1, 0, MONSTER_LIFE},
-                    {14.32, 13.36, 3, 0, MONSTER_LIFE * 2},
+                    {14.32, 13.36, 3, 0, MONSTER_LIFE},
                     {4.123, 10.76, 1, 0, MONSTER_LIFE} },
                   &wallTex,  // textures for the walls
                   &monsterTex, // textures for the monsters
@@ -144,17 +170,61 @@ int demoMain()
             if (gs.map.is_empty(nx, gs.player.y)) gs.player.x = nx;
             if (gs.map.is_empty(gs.player.x, ny)) gs.player.y = ny;
         }
+
+        bool isVictory = true;
+
         for (size_t i=0; i<gs.monsters.size(); i++) { // update the distances from the player to each sprite
             gs.monsters[i].player_dist = std::sqrt(pow(gs.player.x - gs.monsters[i].x, 2) + pow(gs.player.y - gs.monsters[i].y, 2));
+            if(gs.monsters[i].life>0)
+            {
+                isVictory = false;
+            }
         }
         std::sort(gs.monsters.begin(), gs.monsters.end()); // sort it from farthest to closest
        
         render(fb, gs, columnArr, depth_buffer, cell_w, cell_h, t2); // render the scene to the frambuffer
 
         arcada.blitFrameBuffer(0, 0, true, false); // block on blit
+
+        if (isVictory)
+        {
+            arcada.enableSpeaker(true);
+            play_tune(audio, sizeof(audio));
+            arcada.enableSpeaker(false);
+            break;            
+        }                
     }
+
+    arcada.display->fillScreen(ARCADA_BLACK);
+    arcada.display->setCursor(0, 0);
+    arcada.display->setTextWrap(true);
+    arcada.display->setTextColor(ARCADA_GREEN);
+
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("");
+    arcada.display->println("     !!!  VICTORY !!!");
+
+    uint8_t j = 0;
+    while(1)
+    {
+        for(int32_t i=0; i< arcada.pixels.numPixels(); i++) {
+            arcada.pixels.setPixelColor(i, display_pixelneo_lights(((i * 256 / arcada.pixels.numPixels()) + j*5) & 255, arcada));
+        }
+        arcada.pixels.show();
+        j++;
+        delay(25);
+    }
+
 
     delete columnArr;
     delete depth_buffer;
     return 0;
 }
+
+
