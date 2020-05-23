@@ -13,6 +13,8 @@
 #include "Adafruit_ImageReader.h"
 
 
+#define MONSTER_LIFE 50
+
 int demoMain() 
 {
       Serial.begin(9600);
@@ -57,11 +59,11 @@ int demoMain()
 
     GameState gs{ Map(),                                // game map
                   {3.456, 2.345, 1.523, M_PI/3., 0, 0}, // player
-                  { {3.523, 3.812, 2, 0},               // monsters lists
-                    {1.834, 8.765, 0, 0},
-                    {5.323, 5.365, 1, 0},
-                    {14.32, 13.36, 3, 0},
-                    {4.123, 10.76, 1, 0} },
+                  { {3.523, 3.812, 2, 0, MONSTER_LIFE},               // monsters lists
+                    {1.834, 8.765, 0, 0, MONSTER_LIFE * 3},
+                    {5.323, 5.365, 1, 0, MONSTER_LIFE},
+                    {14.32, 13.36, 3, 0, MONSTER_LIFE * 2},
+                    {4.123, 10.76, 1, 0, MONSTER_LIFE} },
                   &wallTex,  // textures for the walls
                   &monsterTex, // textures for the monsters
                   &chainsawTex, // textures for the weapons

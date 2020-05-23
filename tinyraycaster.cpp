@@ -8,6 +8,7 @@
 #include "tinyraycaster.h"
 
 #define M_PIx2      6.28318530717958647692
+#define MONSTER_DAMAGE_MASK 0xF800
 
 int wall_x_texcoord(const float hitx, const float hity, Texture *tex_walls) {
     float x = hitx - floor(hitx+.5); // x and y contain (signed) fractional parts of hitx and hity,
@@ -32,11 +33,14 @@ void draw_map(FrameBuffer &fb, const std::vector<Sprite> &sprites, Texture *tex_
         }
     }
     for (size_t i=0; i<sprites.size(); i++) { // show the monsters
-        fb.draw_rectangle(sprites[i].x*cell_w-3, sprites[i].y*cell_h-3, 6, 6, 0xF800);
+        if(sprites[i].life > 0)
+        {
+            fb.draw_rectangle(sprites[i].x*cell_w-3, sprites[i].y*cell_h-3, 6, 6, 0xF800);
+        }
     }
 }
 
-void draw_sprite(FrameBuffer &fb, const GameState &gs, const Sprite &sprite, float *depth_buffer, const Player &player, Texture *tex_sprites) {
+void draw_sprite(FrameBuffer &fb, const GameState &gs, Sprite &sprite, float *depth_buffer, const Player &player, Texture *tex_sprites, size_t variationOffset) {
     size_t curFbWidth = fb.getFbWidth(gs.doDrawMap);
     // absolute direction from the player to the sprite (in radians)
     float sprite_dir = atan2(sprite.y - player.y, sprite.x - player.x);
@@ -47,6 +51,19 @@ void draw_sprite(FrameBuffer &fb, const GameState &gs, const Sprite &sprite, flo
     int h_offset = (sprite_dir - player.a)*(curFbWidth)/(player.fov) + (curFbWidth)/2 - sprite_screen_size/2; // do not forget the 3D view takes only a half of the framebuffer, thus curFbWidth for the screen width
     int v_offset = fb.h_half - sprite_screen_size/2;
 
+    //TODO: Put this code to an appropriate place    
+    bool isUnderAttack = gs.attack == 1 && sprite.player_dist < 1.;
+    if(isUnderAttack)
+    {
+        sprite.life -= 3;
+        h_offset += (variationOffset-1);
+    }    
+    if(sprite.life < 0)
+    {
+        return;
+    }
+    //
+
     for (size_t i=0; i<sprite_screen_size; i++) {
         if (h_offset+int(i)<0 || h_offset+i>=curFbWidth) continue;
         if (depth_buffer[h_offset+i]<sprite.player_dist) continue; // this sprite column is occluded
@@ -56,16 +73,20 @@ void draw_sprite(FrameBuffer &fb, const GameState &gs, const Sprite &sprite, flo
 
             if(color != 0xFFFF)
             {
+                if(isUnderAttack)
+                {
+                    color = color & MONSTER_DAMAGE_MASK;                    
+                }
                 fb.set_pixel(curFbWidth + h_offset+i, v_offset+j, color);
             }
         }
     }
 }
 
-void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *depth_buffer, size_t cell_w, size_t cell_h, unsigned long tick) {
+void render(FrameBuffer &fb, GameState &gs, uint16_t *columnArr, float *depth_buffer, size_t cell_w, size_t cell_h, unsigned long tick) {
     const Map &map                     = gs.map;
     const Player &player               = gs.player;
-    const std::vector<Sprite> &sprites = gs.monsters;
+    std::vector<Sprite> &sprites = gs.monsters;
     Texture *tex_walls           = gs.tex_walls;
     Texture *tex_monst           = gs.tex_monst;
 
@@ -122,8 +143,11 @@ void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *de
         draw_map(fb, sprites, tex_walls, map, cell_w, cell_h);
     }    
 
+
+    size_t variationOffset = (size_t)((sin(tick) + 1.) * 2.);
+
     for (size_t i=0; i<sprites.size(); i++) { // draw the sprites
-        draw_sprite(fb, gs, sprites[i], depth_buffer, player, tex_monst);
+        draw_sprite(fb, gs, sprites[i], depth_buffer, player, tex_monst, variationOffset);
     }
 
     if(!gs.doDrawMap)
@@ -132,7 +156,7 @@ void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *de
         size_t v_offset = 65;
         if(player.walk != 0 || gs.attack == 1)
         {
-            v_offset += (size_t)((sin(tick) + 1.) * 2.);
+            v_offset += variationOffset;
         }
         for (size_t i=0; i<gs.tex_weapon->size; i++) {        
             for (size_t j=0; j<gs.tex_weapon->size; j++) {            
