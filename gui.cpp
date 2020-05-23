@@ -52,7 +52,7 @@ int demoMain()
     FrameBuffer fb{ARCADA_TFT_WIDTH, ARCADA_TFT_HEIGHT,ARCADA_TFT_WIDTH/2, ARCADA_TFT_HEIGHT/2, ARCADA_TFT_WIDTH * ARCADA_TFT_HEIGHT * 2, framebuffer};  
 
     Texture wallTex = Texture((void *)(&imageReader), "walltext24half.bmp");    
-    Texture monsterTex = Texture((void *)(&imageReader), "monsters24half.bmp");    
+    Texture monsterTex = Texture((void *)(&imageReader), "monsters24.bmp");    
     Texture chainsawTex = Texture((void *)(&imageReader), "chainsaw24.bmp");    
 
     GameState gs{ Map(),                                // game map
@@ -147,7 +147,7 @@ int demoMain()
         }
         std::sort(gs.monsters.begin(), gs.monsters.end()); // sort it from farthest to closest
        
-        render(fb, gs, columnArr, depth_buffer, cell_w, cell_h); // render the scene to the frambuffer
+        render(fb, gs, columnArr, depth_buffer, cell_w, cell_h, t2); // render the scene to the frambuffer
 
         arcada.blitFrameBuffer(0, 0, true, false); // block on blit
     }

@@ -62,7 +62,7 @@ void draw_sprite(FrameBuffer &fb, const GameState &gs, const Sprite &sprite, flo
     }
 }
 
-void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *depth_buffer, size_t cell_w, size_t cell_h) {
+void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *depth_buffer, size_t cell_w, size_t cell_h, unsigned long tick) {
     const Map &map                     = gs.map;
     const Player &player               = gs.player;
     const std::vector<Sprite> &sprites = gs.monsters;
@@ -128,13 +128,19 @@ void render(FrameBuffer &fb, const GameState &gs, uint16_t *columnArr, float *de
 
     if(!gs.doDrawMap)
     {
+        size_t h_offset = 48;
+        size_t v_offset = 65;
+        if(player.walk != 0 || gs.attack == 1)
+        {
+            v_offset += (size_t)((sin(tick) + 1.) * 2.);
+        }
         for (size_t i=0; i<gs.tex_weapon->size; i++) {        
             for (size_t j=0; j<gs.tex_weapon->size; j++) {            
                 uint16_t color = gs.tex_weapon->get(i, j, gs.attack);
 
                 if(color != 0xFFFF)
                 {
-                    fb.set_pixel(curFbWidth + 48+i, 64+j, color); //48 - hor offset, 65 - ver offset
+                    fb.set_pixel(curFbWidth + h_offset+i, v_offset+j, color); 
                 }
             }
         }
