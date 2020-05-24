@@ -19,11 +19,16 @@ Chainsaw texture taken from here:
 In order to run it on your PyGamer, you need Arduino IDE and most of the libraries mentioned here:
 <https://learn.adafruit.com/adafruit-pygamer/arduino-libraries>
 
-Best setting for compiler optimization is: "Here be dragons (-Ofast -funroll-loops)"
+Best setting for compiler optimization is: "Here be dragons (-Ofast -funroll-loops)".
 Overclocking the board to 180-200Mhz gives decent fps.
 
 
 This whole project was thrown together in two days. Code needs a lot of cleanup...
+
+Here's how it looks on the PyGamer:
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=Z86SfXGimNw" target="_blank"><img src="http://img.youtube.com/vi/Z86SfXGimNw/0.jpg" 
+alt="PyGamer Demo" width="240" height="180" border="10" /></a>
 
 
 
