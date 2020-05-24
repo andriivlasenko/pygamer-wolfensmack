@@ -43,7 +43,7 @@ uint32_t display_pixelneo_lights(byte wheelPos, Adafruit_Arcada &arcada) {
 
 int demoMain() 
 {
-      Serial.begin(9600);
+    //  Serial.begin(9600);
     //  Serial.print("Tiny ray caster demo");
 
     SdFat sdCard;         // SD card filesystem
