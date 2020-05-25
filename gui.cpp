@@ -79,7 +79,7 @@ int demoMain()
 
     FrameBuffer fb{ARCADA_TFT_WIDTH, ARCADA_TFT_HEIGHT,ARCADA_TFT_WIDTH/2, ARCADA_TFT_HEIGHT/2, ARCADA_TFT_WIDTH * ARCADA_TFT_HEIGHT * 2, framebuffer};  
 
-    Texture wallTex = Texture((void *)(&imageReader), "walltext24half.bmp");    
+    Texture wallTex = Texture((void *)(&imageReader), "walltext24.bmp");    
     Texture monsterTex = Texture((void *)(&imageReader), "monsters24.bmp");    
     Texture chainsawTex = Texture((void *)(&imageReader), "chainsaw24.bmp");    
 

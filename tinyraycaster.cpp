@@ -102,7 +102,7 @@ void render(FrameBuffer &fb, GameState &gs, uint16_t *columnArr, float *depth_bu
 
     for (size_t i=0; i<curFbWidth; i++) { // draw the visibility cone AND the "3D" view
         float angle = player.a-player.fov/2 + player.fov*i/float(curFbWidth);
-        for (float t=0; t<10; t+=.02) {//for (float t=0; t<20; t+=.01) { // ray marching loop
+        for (float t=0; t<15; t+=.04) {//for (float t=0; t<20; t+=.01) { // ray marching loop
             float x = player.x + t*cos(angle);
             float y = player.y + t*sin(angle);
             if(gs.doDrawMap)
