@@ -19,6 +19,11 @@ Chainsaw texture taken from here:
 In order to run it on your PyGamer, you need Arduino IDE and most of the libraries mentioned here:
 <https://learn.adafruit.com/adafruit-pygamer/arduino-libraries>
 
+Also you would need a micro-sd card formatted in FAT32 with these files on it in the root:
+* monsters24.bmp
+* walltext24.bmp
+* chainsaw24.bmp
+
 Best setting for compiler optimization is: "Here be dragons (-Ofast -funroll-loops)".
 Overclocking the board to 180-200Mhz gives decent fps.
 
